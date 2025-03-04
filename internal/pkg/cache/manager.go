@@ -10,34 +10,34 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
-	"github.com/fynxlabs/ontap/pkg/openapi"
+	"github.com/fynxlabs/ontap/internal/pkg/openapi"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 )
 
-// LibOpenAPICacheManager manages the caching of OpenAPI specs using libopenapi
-type LibOpenAPICacheManager struct {
+// CacheManager manages the caching of OpenAPI specs
+type CacheManager struct {
 	// Store is the cache store
-	Store LibOpenAPICacheStore
+	Store CacheStore
 }
 
-// NewLibOpenAPICacheManager creates a new LibOpenAPICacheManager
-func NewLibOpenAPICacheManager(cacheDir string) (*LibOpenAPICacheManager, error) {
+// NewCacheManager creates a new CacheManager
+func NewCacheManager(cacheDir string) (*CacheManager, error) {
 	if cacheDir == "" {
 		cacheDir = DefaultCacheDir()
 	}
 
-	store, err := NewLibOpenAPIFileSystemCacheStore(cacheDir)
+	store, err := NewFileSystemCacheStore(cacheDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cache store: %w", err)
 	}
 
-	return &LibOpenAPICacheManager{
+	return &CacheManager{
 		Store: store,
 	}, nil
 }
 
 // GetSpec retrieves a cached spec or loads it from the source
-func (m *LibOpenAPICacheManager) GetSpec(specPath string, ttl time.Duration) (*v3.Document, error) {
+func (m *CacheManager) GetSpec(specPath string, ttl time.Duration) (*v3.Document, error) {
 	// Generate a cache key for the spec
 	key := m.generateCacheKey(specPath)
 
@@ -50,7 +50,7 @@ func (m *LibOpenAPICacheManager) GetSpec(specPath string, ttl time.Duration) (*v
 
 	// Load the spec from the source
 	log.Info("Loading OpenAPI spec", "path", specPath)
-	spec, err := LoadLibOpenAPISpec(specPath)
+	spec, err := LoadSpec(specPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load spec: %w", err)
 	}
@@ -64,7 +64,7 @@ func (m *LibOpenAPICacheManager) GetSpec(specPath string, ttl time.Duration) (*v
 }
 
 // RefreshSpec refreshes a cached spec
-func (m *LibOpenAPICacheManager) RefreshSpec(specPath string, ttl time.Duration) (*v3.Document, error) {
+func (m *CacheManager) RefreshSpec(specPath string, ttl time.Duration) (*v3.Document, error) {
 	// Generate a cache key for the spec
 	key := m.generateCacheKey(specPath)
 
@@ -75,7 +75,7 @@ func (m *LibOpenAPICacheManager) RefreshSpec(specPath string, ttl time.Duration)
 
 	// Load the spec from the source
 	log.Info("Refreshing OpenAPI spec", "path", specPath)
-	spec, err := LoadLibOpenAPISpec(specPath)
+	spec, err := LoadSpec(specPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load spec: %w", err)
 	}
@@ -89,30 +89,30 @@ func (m *LibOpenAPICacheManager) RefreshSpec(specPath string, ttl time.Duration)
 }
 
 // ClearCache clears the entire cache
-func (m *LibOpenAPICacheManager) ClearCache() error {
+func (m *CacheManager) ClearCache() error {
 	return m.Store.Clear()
 }
 
 // generateCacheKey generates a cache key for a spec path
-func (m *LibOpenAPICacheManager) generateCacheKey(specPath string) string {
+func (m *CacheManager) generateCacheKey(specPath string) string {
 	// Use a hash of the spec path as the key
 	hash := sha256.Sum256([]byte(specPath))
 	return hex.EncodeToString(hash[:])
 }
 
-// LoadLibOpenAPISpec loads an OpenAPI specification from a file or URL using libopenapi
-func LoadLibOpenAPISpec(specPath string) (*v3.Document, error) {
-	parser := openapi.NewLibOpenAPISpecParser()
+// LoadSpec loads an OpenAPI specification from a file or URL
+func LoadSpec(specPath string) (*v3.Document, error) {
+	parser := openapi.NewSpecParser()
 	return parser.ParseSpec(specPath)
 }
 
-// IsLibOpenAPIURL checks if a string is a URL
-func IsLibOpenAPIURL(s string) bool {
+// IsURL checks if a string is a URL
+func IsURL(s string) bool {
 	return s != "" && (s[:7] == "http://" || s[:8] == "https://")
 }
 
-// DownloadLibOpenAPISpec downloads an OpenAPI specification from a URL to a file
-func DownloadLibOpenAPISpec(url, destPath string) error {
+// DownloadSpec downloads an OpenAPI specification from a URL to a file
+func DownloadSpec(url, destPath string) error {
 	// Create the destination directory if it doesn't exist
 	destDir := filepath.Dir(destPath)
 	if err := os.MkdirAll(destDir, 0755); err != nil {

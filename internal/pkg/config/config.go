@@ -140,7 +140,7 @@ func CreateDefaultConfig(path string) error {
 	config := &Config{
 		APIs: map[string]APIConfig{
 			"example-api": {
-				APISpec: "./test/openapi.yaml",
+				APISpec: "./test/fixtures/openapi.yaml",
 				Auth:    "user:pass",
 				URL:     "http://api.example.com",
 				CacheTTL: Duration{

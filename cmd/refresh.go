@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
-	"github.com/fynxlabs/ontap/pkg/cache"
-	"github.com/fynxlabs/ontap/pkg/config"
+	"github.com/fynxlabs/ontap/internal/pkg/cache"
+	"github.com/fynxlabs/ontap/internal/pkg/config"
 	"github.com/spf13/cobra"
 )
 

@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
-	"github.com/fynxlabs/ontap/pkg/cache"
-	"github.com/fynxlabs/ontap/pkg/config"
-	"github.com/fynxlabs/ontap/pkg/http"
-	"github.com/fynxlabs/ontap/pkg/openapi"
-	"github.com/fynxlabs/ontap/pkg/output"
-	"github.com/fynxlabs/ontap/pkg/utils"
+	"github.com/fynxlabs/ontap/internal/pkg/cache"
+	"github.com/fynxlabs/ontap/internal/pkg/config"
+	"github.com/fynxlabs/ontap/internal/pkg/http"
+	"github.com/fynxlabs/ontap/internal/pkg/openapi"
+	"github.com/fynxlabs/ontap/internal/pkg/output"
+	"github.com/fynxlabs/ontap/internal/pkg/utils"
 	"github.com/spf13/cobra"
 )
 

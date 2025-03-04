@@ -9,7 +9,7 @@ import (
 
 func TestLibOpenAPI(t *testing.T) {
 	// Read the OpenAPI spec
-	data, err := os.ReadFile("openapi.yaml")
+	data, err := os.ReadFile("./fixtures/openapi.yaml")
 	if err != nil {
 		t.Fatalf("Failed to read OpenAPI spec: %v", err)
 	}

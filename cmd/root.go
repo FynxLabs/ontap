@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
-	"github.com/fynxlabs/ontap/pkg/config"
-	"github.com/fynxlabs/ontap/pkg/utils"
+	"github.com/fynxlabs/ontap/internal/pkg/config"
+	"github.com/fynxlabs/ontap/internal/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

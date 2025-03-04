@@ -51,7 +51,7 @@ sudo mv ontap /usr/local/bin/
     ```yaml
     apis:
       my-api:
-        apispec: ./test/openapi.yaml
+        apispec: ./test/fixtures/openapi.yaml
         auth: user:pass
         url: http://api.example.com
     ```
@@ -78,7 +78,7 @@ Example configuration:
 ```yaml
 apis:
   my-api:
-    apispec: ./test/openapi.yaml
+    apispec: ./test/fixtures/openapi.yaml
     auth: user:pass
     url: http://api.example.com
     cache_ttl: 24h
