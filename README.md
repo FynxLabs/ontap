@@ -51,7 +51,7 @@ sudo mv ontap /usr/local/bin/
     ```yaml
     apis:
       my-api:
-        apispec: ./openapi.yaml
+        apispec: ./test/openapi.yaml
         auth: user:pass
         url: http://api.example.com
     ```
@@ -78,7 +78,7 @@ Example configuration:
 ```yaml
 apis:
   my-api:
-    apispec: ./openapi.yaml
+    apispec: ./test/openapi.yaml
     auth: user:pass
     url: http://api.example.com
     cache_ttl: 24h
@@ -282,11 +282,11 @@ This example shows how a simple Petstore API with three endpoints is transformed
 ```mermaid
 flowchart TD
     A[Petstore OpenAPI Spec] -->|Contains| B1[GET /pets]
-    A -->|Contains| B2[GET /pets/{id}]
+    A -->|Contains| B2["GET /pets/{id}"]
     A -->|Contains| B3[POST /pets]
 
     B1 -->|Transforms to| C1[petstore list-pets]
-    B2 -->|Transforms to| C2[petstore get-pet {id}]
+    B2 -->|Transforms to| C2["petstore get-pet {id}"]
     B3 -->|Transforms to| C3[petstore create-pet --data]
 
     C1 -->|With Flags| D1[--limit, --output, etc.]
@@ -334,16 +334,16 @@ flowchart TD
     C -->|Parse| D[OpenAPI Document]
     D -->|Transform| E[CLI Command Tree]
 
-    subgraph "Example: Petstore API"
-    F[petstore:\n  apispec: ./petstore.yaml\n  url: http://api.example.com] -->|Loads| G[OpenAPI Spec]
-    G -->|Contains| H1[/pets GET]
-    G -->|Contains| H2[/pets/{id} GET]
-    G -->|Contains| H3[/pets POST]
+    subgraph Example
+    F["Petstore API Spec"] -->|Loads| G[OpenAPI Spec]
+    G -->|Contains| H1["/pets GET"]
+    G -->|Contains| H2["/pets/{id} GET"]
+    G -->|Contains| H3["/pets POST"]
 
     H1 & H2 & H3 -->|Generate| I[CLI Commands]
-    I -->|Results in| J1[ontap petstore list-pets]
-    I -->|Results in| J2[ontap petstore get-pet {id}]
-    I -->|Results in| J3[ontap petstore create-pet]
+    I -->|Results in| J1["ontap petstore list-pets"]
+    I -->|Results in| J2["ontap petstore get-pet {id}"]
+    I -->|Results in| J3["ontap petstore create-pet"]
     end
 ```
 
@@ -357,7 +357,3 @@ The following features and improvements are planned for future releases:
 4. **Improved Error Handling**: Better error messages and recovery options
 5. **Advanced Response Processing**: Enhanced filtering and extraction capabilities
 6. **Improved Documentation**: Add more examples and guides for common use cases
-
-## License
-
-MIT
