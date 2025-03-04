@@ -1,0 +1,14 @@
+# config.yaml
+apis:
+  api-dev:
+    apispec: ./openapi.yaml
+    auth: user:pass
+    url: http://api.example.com
+  api-prod:
+    apispec: ./openapi.yaml
+    auth: user:pass
+    url: http://api.example.com
+  api-other:
+    apispec: ./openapi.yaml
+    auth: user:pass
+    url: http://api.example.com

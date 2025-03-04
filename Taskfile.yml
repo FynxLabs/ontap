@@ -1,0 +1,73 @@
+# Taskfile.yml
+version: "3"
+
+vars:
+  BINARY_NAME: ontap
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
+  BUILD_TIME:
+    sh: date -u +"%Y-%m-%dT%H:%M:%SZ"
+  LDFLAGS: -ldflags "-X github.com/fynxlabs/ontap/cmd.Version={{.VERSION}} -X github.com/fynxlabs/ontap/cmd.BuildTime={{.BUILD_TIME}}"
+
+tasks:
+  default:
+    deps: [build]
+
+  build:
+    desc: Build the binary
+    cmds:
+      - echo "Building {{.BINARY_NAME}}..."
+      - go build {{.LDFLAGS}} -o {{.BINARY_NAME}}
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - echo "Cleaning..."
+      - rm -f {{.BINARY_NAME}}
+      - rm -f *.log
+
+  test:
+    desc: Run tests
+    cmds:
+      - echo "Running tests..."
+      - go test -v ./...
+
+  lint:
+    desc: Run linter
+    cmds:
+      - echo "Running linter..."
+      - go vet ./...
+      - |
+        if command -v golangci-lint >/dev/null 2>&1; then
+          golangci-lint run ./...
+        else
+          echo "golangci-lint not installed"
+        fi
+
+  install:
+    desc: Install the binary
+    deps: [build]
+    cmds:
+      - echo "Installing {{.BINARY_NAME}}..."
+      - install -m755 {{.BINARY_NAME}} /usr/local/bin/{{.BINARY_NAME}}
+
+  uninstall:
+    desc: Uninstall the binary
+    cmds:
+      - echo "Uninstalling {{.BINARY_NAME}}..."
+      - rm -f /usr/local/bin/{{.BINARY_NAME}}
+
+  run:
+    desc: Run the application
+    cmds:
+      - ./{{.BINARY_NAME}} {{.CLI_ARGS}}
+
+  release:
+    desc: Create a new release using goreleaser
+    cmds:
+      - goreleaser release --clean
+
+  release-snapshot:
+    desc: Create a snapshot release for testing
+    cmds:
+      - goreleaser release --snapshot --clean

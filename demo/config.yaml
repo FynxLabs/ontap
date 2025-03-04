@@ -1,0 +1,9 @@
+apis:
+  demo-noauth:
+    apispec: http://localhost:8080/openapi.json
+    url: http://localhost:8080
+
+  demo-basic:
+    apispec: http://localhost:8081/openapi.json
+    url: http://localhost:8081
+    auth: user:pass
