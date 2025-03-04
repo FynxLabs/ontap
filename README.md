@@ -230,24 +230,31 @@ This diagram shows the main components of OnTap and how they interact:
 
 ```mermaid
 flowchart TD
-    User([User]) -->|Runs Command| CLI[OnTap CLI]
-    CLI -->|Loads| Config[Configuration]
-    Config -->|Contains| APISpecs[API Specifications]
-    CLI -->|Parses| APISpecs
-    APISpecs -->|Generates| Commands[Dynamic Commands]
-    User -->|Interacts with| Commands
-    Commands -->|Executes| Requests[API Requests]
-    Requests -->|Returns| Responses[API Responses]
-    Responses -->|Formatted as| Output[JSON/YAML/CSV/etc.]
-    Output -->|Displayed to| User
+    User(["User"]) -- Runs Command --> CLI["OnTap CLI"]
+    CLI -- Loads --> Config["Configuration"]
+    Config -- Contains --> APISpecs["API Specifications"]
+    CLI -- Parses --> APISpecs
+    APISpecs -- Generates --> Commands["Dynamic Commands"]
+    User -- Interacts with --> Commands
+    Commands -- Executes --> Requests["API Requests"]
+    Requests -- Returns --> Responses["API Responses"]
+    Responses -- Formatted as --> Output["JSON/YAML/CSV/etc."]
+    Output -- Displayed to --> User
 
-    classDef user fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef core fill:#bbf,stroke:#33f,stroke-width:2px;
-    classDef data fill:#bfb,stroke:#3f3,stroke-width:2px;
+     User:::user
+     CLI:::data
+     Config:::data
+     APISpecs:::data
+     Commands:::core
+     Requests:::core
+     Responses:::core
+     Output:::data
+    classDef data fill:#00C853, stroke:#3f3, stroke-width:2px
+    classDef user fill:#AA00FF, stroke:#333, stroke-width:2px
+    classDef core fill:#2962FF, stroke:#33f, stroke-width:2px
 
-    class User user;
-    class CLI,Commands,Requests,Responses core;
-    class Config,APISpecs,Output data;
+
+
 ```
 
 ### OpenAPI Spec Processing
