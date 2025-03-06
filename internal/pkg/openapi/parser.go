@@ -16,19 +16,6 @@ import (
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 )
 
-// stringValue returns the string value of a pointer or an empty string if nil
-func stringValue(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-// pointerToUint64 creates a pointer to a uint64 value
-func pointerToUint64(value uint64) *uint64 {
-	return &value
-}
-
 // DefaultSpecParser implements SpecParser
 type DefaultSpecParser struct {
 	detector VersionDetector

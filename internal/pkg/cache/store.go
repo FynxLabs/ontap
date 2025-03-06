@@ -80,7 +80,9 @@ func (s *FileSystemCacheStore) Get(key string) (*CacheEntry, error) {
 		s.mutex.RUnlock()
 		if entry.IsExpired() {
 			// Remove expired entry
-			s.Delete(key)
+			if err := s.Delete(key); err != nil {
+				log.Warn("Failed to delete expired cache entry", "key", key, "error", err)
+			}
 			return nil, fmt.Errorf("cache entry expired")
 		}
 		return entry, nil
@@ -103,7 +105,9 @@ func (s *FileSystemCacheStore) Get(key string) (*CacheEntry, error) {
 	// Check if the entry is expired
 	if entry.IsExpired() {
 		// Remove expired entry
-		s.Delete(key)
+		if err := s.Delete(key); err != nil {
+			log.Warn("Failed to delete expired cache entry", "key", key, "error", err)
+		}
 		return nil, fmt.Errorf("cache entry expired")
 	}
 
@@ -200,8 +204,8 @@ func DefaultCacheDir() string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		log.Warn("Failed to get user home directory", "error", err)
-		return ".otap/cache"
+		return "config/.ontap/cache"
 	}
 
-	return filepath.Join(homeDir, ".otap", "cache")
+	return filepath.Join(homeDir, "config", ".ontap", "cache")
 }

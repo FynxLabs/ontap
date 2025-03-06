@@ -1,0 +1,199 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+min_version = "2024.1.1"
+
+[env]
+# Environment variables for the project
+BINARY_NAME = "ontap"
+# For dynamic values, we'll use the shell directly in the tasks
+LDFLAGS = "-ldflags \"-X github.com/fynxlabs/ontap/cmd.Version=$(git describe --tags --always --dirty 2>/dev/null || echo \"dev\") -X github.com/fynxlabs/ontap/cmd.BuildTime=$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")\""
+
+[tools]
+go = "latest"
+goreleaser = "latest"
+golangci-lint = "latest"
+docker-compose = "latest"
+
+[tasks]
+# Default task runs build
+default = { depends = ["build"] }
+
+[tasks.build]
+description = "Build the binary"
+run = "go build {{env.LDFLAGS}} -o {{env.BINARY_NAME}}"
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = ["rm -f {{env.BINARY_NAME}}", "rm -f *.log"]
+
+[tasks.test]
+description = "Run tests"
+run = "go test -v ./..."
+
+[tasks.lint]
+description = "Run linter"
+run = """
+#!/usr/bin/env bash
+echo "Running linter..."
+go vet ./...
+if command -v golangci-lint >/dev/null 2>&1; then
+  golangci-lint run ./...
+else
+  echo "golangci-lint not installed"
+fi
+"""
+
+[tasks.install]
+description = "Install the binary"
+depends = ["build"]
+run = """
+#!/usr/bin/env bash
+echo "Installing {{env.BINARY_NAME}}..."
+install -m755 {{env.BINARY_NAME}} /usr/local/bin/{{env.BINARY_NAME}}
+"""
+
+[tasks.uninstall]
+description = "Uninstall the binary"
+run = """
+#!/usr/bin/env bash
+echo "Uninstalling {{env.BINARY_NAME}}..."
+rm -f /usr/local/bin/{{env.BINARY_NAME}}
+"""
+
+[tasks.run]
+description = "Run the application"
+run = "./{{env.BINARY_NAME}} {{option(name=\"args\")}}"
+
+[tasks.release]
+description = "Create a new release using goreleaser"
+run = "goreleaser release --clean"
+
+[tasks.release-snapshot]
+description = "Create a snapshot release for testing"
+run = "goreleaser release --snapshot --clean"
+
+[tasks.demo-start]
+description = "Start the demo API servers"
+run = """
+#!/usr/bin/env bash
+set -e
+
+echo "=== Starting OnTap Demo ==="
+echo "1. Starting Docker containers..."
+cd demo
+docker-compose down -v 2>/dev/null || true
+docker-compose build --no-cache
+docker-compose up -d
+
+# Wait for the API servers to be ready
+echo "2. Waiting for API servers to start..."
+MAX_RETRIES=60
+RETRY_INTERVAL=1
+
+# Check the health endpoint of the no-auth server
+echo "   Checking no-auth server (http://localhost:8080)..."
+retries=0
+while [ $retries -lt $MAX_RETRIES ]; do
+  if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health | grep -q "200"; then
+    echo "   ✅ No-auth server is up and running!"
+    break
+  fi
+  retries=$((retries+1))
+  echo "   Waiting for no-auth server... ($retries/$MAX_RETRIES)"
+  sleep $RETRY_INTERVAL
+done
+
+if [ $retries -eq $MAX_RETRIES ]; then
+  echo "   ❌ No-auth server failed to start within the timeout period."
+  echo "   Check the logs with: docker-compose logs api-noauth"
+  exit 1
+fi
+
+# Check the OpenAPI spec endpoint
+echo "3. Verifying OpenAPI spec is available..."
+if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/openapi.json | grep -q "200"; then
+  echo "   ✅ OpenAPI spec is available at http://localhost:8080/openapi.json"
+else
+  echo "   ❌ OpenAPI spec is not available. Check the server logs."
+  echo "   Check the logs with: docker-compose logs api-noauth"
+  exit 1
+fi
+
+# Download the OpenAPI spec from the server
+echo "4. Downloading OpenAPI spec from server..."
+# Download to demo directory for URL-based example
+curl -s http://localhost:8080/openapi.json -o openapi.json
+
+if [ -f "openapi.json" ]; then
+  echo "   ✅ OpenAPI spec downloaded to $(pwd)/openapi.json"
+else
+  echo "   ⚠️ Failed to download OpenAPI spec. This might affect the file-based API configuration."
+fi
+
+echo "=== Demo Started Successfully! ==="
+echo ""
+echo "Try these commands:"
+echo ""
+echo "# Using URL-based OpenAPI spec:"
+echo "ontap --config demo/config.yaml demo-noauth list-items"
+echo "ontap --config demo/config.yaml demo-noauth get-item 1"
+echo "ontap --config demo/config.yaml demo-noauth create-item --data '{\"name\":\"Test Item\",\"description\":\"A test item\"}'"
+echo ""
+echo "# Using local file-based OpenAPI spec:"
+echo "ontap --config demo/config.yaml demo-noauth-file list-items"
+echo "ontap --config demo/config.yaml demo-noauth-file get-item 1"
+echo ""
+echo "# Using basic authentication:"
+echo "ontap --config demo/config.yaml demo-basic list-items --auth=\"user:pass\""
+echo "ontap --config demo/config.yaml demo-basic get-item 1 --auth=\"user:pass\""
+echo ""
+echo "# To stop the demo:"
+echo "mise run demo-stop"
+echo ""
+echo "# For more information, see:"
+echo "cat demo/README.md"
+"""
+
+[tasks.demo-stop]
+description = "Stop the demo API servers"
+run = """
+#!/usr/bin/env bash
+echo "=== Stopping OnTap Demo ==="
+cd demo
+docker-compose down
+echo "✅ Demo stopped successfully"
+"""
+
+[tasks.demo-logs]
+description = "View the logs from the demo API servers"
+run = """
+#!/usr/bin/env bash
+cd demo
+docker-compose logs -f
+"""
+
+[tasks.demo-restart]
+description = "Restart the demo API servers"
+run = """
+#!/usr/bin/env bash
+echo "=== Restarting OnTap Demo ==="
+cd demo
+docker-compose restart
+echo "✅ Demo restarted successfully"
+"""
+
+[tasks.demo-status]
+description = "Check the status of the demo API servers"
+run = """
+#!/usr/bin/env bash
+echo "=== OnTap Demo Status ==="
+cd demo
+docker-compose ps
+echo ""
+echo "API Endpoints:"
+echo "- No Auth API: http://localhost:8080"
+echo "- Basic Auth API: http://localhost:8081"
+echo ""
+echo "OpenAPI Specs:"
+echo "- URL-based: http://localhost:8080/openapi.json"
+echo "- File-based: $(pwd)/api/openapi.json"
+"""

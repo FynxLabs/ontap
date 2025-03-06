@@ -1,0 +1,13 @@
+# This file activates mise when entering the directory
+# It tells mise to use the tools and tasks defined in mise.toml
+
+[tools]
+# Use the tools defined in mise.toml
+go = { version = "latest" }
+goreleaser = { version = "latest" }
+golangci-lint = { version = "latest" }
+docker-compose = { version = "latest" }
+
+# Automatically activate the environment when entering the directory
+[env]
+# Inherit environment variables from mise.toml

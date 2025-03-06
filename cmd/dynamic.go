@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -14,25 +15,53 @@ import (
 	"github.com/fynxlabs/ontap/internal/pkg/openapi"
 	"github.com/fynxlabs/ontap/internal/pkg/output"
 	"github.com/fynxlabs/ontap/internal/pkg/utils"
+	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // generateDynamicCommands generates dynamic commands for all APIs
 func generateDynamicCommands() error {
+	// Get the config file path
+	configFile := viper.ConfigFileUsed()
+	if configFile == "" {
+		log.Debug("No config file used")
+		return nil
+	}
+
+	log.Debug("Generating dynamic commands from config", "path", configFile)
+
+	// Create a config loader
+	loader := config.NewConfigLoader()
+
 	// Load the config
-	cfg, err := loadConfig()
+	cfg, err := loader.LoadConfig(configFile)
 	if err != nil {
+		// Check if the error is because the config file doesn't exist
+		if strings.Contains(err.Error(), "config file not found") {
+			log.Info("No configuration found. Run 'ontap init' to create one.")
+			return nil
+		}
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Create a cache manager
+	// If no APIs are configured, return
+	if len(cfg.APIs) == 0 {
+		log.Info("No APIs configured. Run 'ontap init' to configure APIs.")
+		return nil
+	}
+
+	// Create a cache manager with proper error handling
 	cacheManager, err := cache.NewLibOpenAPICacheManager("")
 	if err != nil {
+		log.Error("Failed to create cache manager", "error", err)
 		return fmt.Errorf("failed to create cache manager: %w", err)
 	}
 
 	// Add a command for each API
 	for name, apiConfig := range cfg.APIs {
+		log.Debug("Adding command for API", "name", name, "url", apiConfig.URL)
+
 		// Create a new command
 		apiCmd := &cobra.Command{
 			Use:   name,
@@ -54,17 +83,22 @@ func generateDynamicCommands() error {
 }
 
 // generateDynamicAPICommands generates dynamic commands for an API
-func generateDynamicAPICommands(cmd *cobra.Command, _ string, apiConfig config.APIConfig, cacheManager *cache.LibOpenAPICacheManager) error {
+func generateDynamicAPICommands(cmd *cobra.Command, apiName string, apiConfig config.APIConfig, cacheManager *cache.LibOpenAPICacheManager) error {
 	// Get the cache TTL
 	ttl := apiConfig.CacheTTL.Duration
 	if ttl == 0 {
 		ttl = 24 * time.Hour
 	}
 
-	// Load the OpenAPI spec
-	spec, err := cacheManager.GetSpec(apiConfig.APISpec, ttl)
+	// Load the OpenAPI spec with proper error handling
+	spec, err := loadOpenAPISpec(cacheManager, apiConfig.APISpec, ttl)
 	if err != nil {
-		return fmt.Errorf("failed to load spec: %w", err)
+		return fmt.Errorf("failed to load spec for API %s: %w", apiName, err)
+	}
+
+	// Check if the spec is nil
+	if spec == nil {
+		return fmt.Errorf("failed to load spec for API %s: spec is nil", apiName)
 	}
 
 	// Create a parser
@@ -115,6 +149,81 @@ func generateDynamicAPICommands(cmd *cobra.Command, _ string, apiConfig config.A
 	}
 
 	return nil
+}
+
+// loadOpenAPISpec loads an OpenAPI spec with proper error handling
+func loadOpenAPISpec(cacheManager *cache.LibOpenAPICacheManager, specPath string, ttl time.Duration) (*v3.Document, error) {
+	if cacheManager == nil {
+		return nil, fmt.Errorf("cache manager is nil")
+	}
+
+	// Check if we need to clear the cache
+	if os.Getenv("ONTAP_CLEAR_CACHE") == "true" {
+		clearCache(cacheManager)
+	}
+
+	// Try to get the spec from the cache manager
+	spec, err := safeGetSpec(cacheManager, specPath, ttl)
+	if err != nil || spec == nil {
+		log.Error("Failed to get spec from cache", "path", specPath, "error", err)
+
+		// Try to load the spec directly
+		parser := openapi.NewLibOpenAPISpecParser()
+		spec, err = parser.ParseSpec(specPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse spec: %w", err)
+		}
+
+		// Check if the spec is nil
+		if spec == nil {
+			return nil, fmt.Errorf("failed to parse spec: spec is nil")
+		}
+
+		// Try to cache the spec
+		// Create a cache key
+		cacheKey := generateCacheKey(specPath)
+		if cacheErr := cacheManager.Store.Set(cacheKey, spec, ttl); cacheErr != nil {
+			log.Warn("Failed to cache spec", "error", cacheErr)
+		}
+	}
+
+	return spec, nil
+}
+
+// safeGetSpec safely gets a spec from the cache manager
+func safeGetSpec(cacheManager *cache.LibOpenAPICacheManager, specPath string, ttl time.Duration) (*v3.Document, error) {
+	var spec *v3.Document
+	var err error
+
+	// Use a defer to catch panics
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("Recovered from panic in GetSpec", "error", r)
+			// Clear the cache
+			clearCache(cacheManager)
+			spec = nil
+			err = fmt.Errorf("panic in GetSpec: %v", r)
+		}
+	}()
+
+	// Try to get the spec
+	spec, err = cacheManager.GetSpec(specPath, ttl)
+	return spec, err
+}
+
+// clearCache clears the cache
+func clearCache(cacheManager *cache.LibOpenAPICacheManager) {
+	if err := cacheManager.Store.Clear(); err != nil {
+		log.Error("Failed to clear cache", "error", err)
+	} else {
+		log.Info("Cache cleared")
+	}
+}
+
+// generateCacheKey generates a cache key for a spec path
+func generateCacheKey(specPath string) string {
+	// Use the spec path as the key
+	return specPath
 }
 
 // createEndpointCommand creates a command for an endpoint

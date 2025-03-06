@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -14,7 +15,7 @@ import (
 // AddGlobalFlags adds global flags to a command
 func AddGlobalFlags(cmd *cobra.Command) {
 	// Add global flags
-	cmd.PersistentFlags().StringP("config", "c", "", "Config file path")
+	cmd.PersistentFlags().StringP("config", "c", "", "Config file (default is $HOME/config/.ontap/config.yaml)")
 	cmd.PersistentFlags().StringP("output", "o", "json", "Output format (json, yaml, csv, text, table)")
 	cmd.PersistentFlags().StringP("log-level", "l", "info", "Log level (debug, info, warn, error)")
 	cmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")
@@ -24,14 +25,30 @@ func AddGlobalFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("filter", "", "Filter response using JQ-like syntax")
 
 	// Bind flags to viper
-	viper.BindPFlag("config", cmd.PersistentFlags().Lookup("config"))
-	viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output"))
-	viper.BindPFlag("log_level", cmd.PersistentFlags().Lookup("log-level"))
-	viper.BindPFlag("verbose", cmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("dry_run", cmd.PersistentFlags().Lookup("dry-run"))
-	viper.BindPFlag("save", cmd.PersistentFlags().Lookup("save"))
-	viper.BindPFlag("extract", cmd.PersistentFlags().Lookup("extract"))
-	viper.BindPFlag("filter", cmd.PersistentFlags().Lookup("filter"))
+	if err := viper.BindPFlag("config", cmd.PersistentFlags().Lookup("config")); err != nil {
+		log.Warn("Failed to bind flag", "flag", "config", "error", err)
+	}
+	if err := viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output")); err != nil {
+		log.Warn("Failed to bind flag", "flag", "output", "error", err)
+	}
+	if err := viper.BindPFlag("log_level", cmd.PersistentFlags().Lookup("log-level")); err != nil {
+		log.Warn("Failed to bind flag", "flag", "log_level", "error", err)
+	}
+	if err := viper.BindPFlag("verbose", cmd.PersistentFlags().Lookup("verbose")); err != nil {
+		log.Warn("Failed to bind flag", "flag", "verbose", "error", err)
+	}
+	if err := viper.BindPFlag("dry_run", cmd.PersistentFlags().Lookup("dry-run")); err != nil {
+		log.Warn("Failed to bind flag", "flag", "dry_run", "error", err)
+	}
+	if err := viper.BindPFlag("save", cmd.PersistentFlags().Lookup("save")); err != nil {
+		log.Warn("Failed to bind flag", "flag", "save", "error", err)
+	}
+	if err := viper.BindPFlag("extract", cmd.PersistentFlags().Lookup("extract")); err != nil {
+		log.Warn("Failed to bind flag", "flag", "extract", "error", err)
+	}
+	if err := viper.BindPFlag("filter", cmd.PersistentFlags().Lookup("filter")); err != nil {
+		log.Warn("Failed to bind flag", "flag", "filter", "error", err)
+	}
 
 	// Bind environment variables
 	viper.SetEnvPrefix("OTAP")
@@ -75,7 +92,9 @@ func AddParameterFlags(cmd *cobra.Command, parameters []Parameter) error {
 
 		// Mark the flag as required if necessary
 		if param.Required {
-			cmd.MarkFlagRequired(param.Name)
+			if err := cmd.MarkFlagRequired(param.Name); err != nil {
+				log.Warn("Failed to mark flag as required", "flag", param.Name, "error", err)
+			}
 		}
 	}
 

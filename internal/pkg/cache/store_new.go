@@ -80,7 +80,9 @@ func (s *LibOpenAPIFileSystemCacheStore) Get(key string) (*LibOpenAPICacheEntry,
 		s.mutex.RUnlock()
 		if entry.IsExpired() {
 			// Remove expired entry
-			s.Delete(key)
+			if err := s.Delete(key); err != nil {
+				log.Warn("Failed to delete expired cache entry", "key", key, "error", err)
+			}
 			return nil, fmt.Errorf("cache entry expired")
 		}
 		return entry, nil
@@ -103,7 +105,9 @@ func (s *LibOpenAPIFileSystemCacheStore) Get(key string) (*LibOpenAPICacheEntry,
 	// Check if the entry is expired
 	if entry.IsExpired() {
 		// Remove expired entry
-		s.Delete(key)
+		if err := s.Delete(key); err != nil {
+			log.Warn("Failed to delete expired cache entry", "key", key, "error", err)
+		}
 		return nil, fmt.Errorf("cache entry expired")
 	}
 

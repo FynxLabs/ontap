@@ -4,6 +4,27 @@ OnTap (`ontap`) is a dynamic CLI generator that creates command-line interfaces 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
+## Prerequisites
+
+### Required Tools
+
+- [mise](https://mise.jdx.dev) - The recommended tool for managing dependencies and running tasks
+  - Automatically manages Go, GoReleaser, and other dependencies
+  - Provides task automation for building, testing, and releasing
+
+### Installing mise
+
+```bash
+# Install mise
+curl https://mise.run | sh
+
+# Add mise to your shell
+echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc  # For bash
+echo 'eval "$(~/.local/bin/mise activate zsh)"' >> ~/.zshrc    # For zsh
+```
+
+After installing mise, it will automatically install all required dependencies when you run any mise task in the project directory.
+
 ## How It Works
 
 OnTap dynamically generates CLI commands based on OpenAPI specifications:
@@ -26,12 +47,46 @@ This approach allows you to immediately interact with any API by simply pointing
 
 ## Installation
 
+### Using Package Managers
+
+OnTap is distributed through various package managers for easy installation:
+
+```bash
+# Homebrew (macOS and Linux)
+brew install fynxlabs/brew-tap/ontap
+
+# Debian/Ubuntu
+curl -L https://github.com/fynxlabs/ontap/releases/latest/download/ontap_Linux_x86_64.deb -o ontap.deb
+sudo dpkg -i ontap.deb
+
+# RPM-based (Fedora, RHEL, etc.)
+curl -L https://github.com/fynxlabs/ontap/releases/latest/download/ontap_Linux_x86_64.rpm -o ontap.rpm
+sudo rpm -i ontap.rpm
+
+# Alpine Linux
+curl -L https://github.com/fynxlabs/ontap/releases/latest/download/ontap_Linux_x86_64.apk -o ontap.apk
+sudo apk add --allow-untrusted ontap.apk
+
+# Arch Linux
+curl -L https://github.com/fynxlabs/ontap/releases/latest/download/ontap_Linux_x86_64.pkg.tar.zst -o ontap.pkg.tar.zst
+sudo pacman -U ontap.pkg.tar.zst
+```
+
+### Direct Download
+
+You can download pre-built binaries for your platform from the [releases page](https://github.com/fynxlabs/ontap/releases).
+
+### Building from Source
+
 ```bash
 # Clone the repository
 git clone https://github.com/fynxlabs/ontap.git
 cd ontap
 
-# Build the CLI
+# Using mise (recommended)
+mise run build
+
+# Or using Go directly
 go build -o ontap
 
 # Install the CLI (optional)
@@ -195,11 +250,12 @@ ontap refresh my-api
 The easiest way to try OnTap is with our Docker Compose demo:
 
 ```bash
-# Start the demo API servers
+# Using mise (recommended)
+mise run demo-start
+
+# Or manually
 cd demo
 docker-compose up -d
-
-# Initialize OnTap with the demo config
 ontap init --config demo/config.yaml
 
 # Try some commands
@@ -209,6 +265,10 @@ ontap demo-noauth create-item --data '{"name":"Test Item","description":"A test 
 
 # Try with authentication
 ontap demo-basic list-items --auth="user:pass"
+
+# Stop the demo
+mise run demo-stop  # Using mise
+# Or: cd demo && docker-compose down  # Manually
 ```
 
 The demo includes:
@@ -220,9 +280,75 @@ The demo includes:
 
 See the [demo README](demo/README.md) for more details.
 
+## Development
+
+### Using mise for Development
+
+OnTap uses [mise](https://mise.jdx.dev) for development tasks. The `mise.toml` file defines all the tools and tasks needed for development.
+
+```bash
+# List available tasks
+mise tasks ls
+
+# Build the project
+mise run build
+
+# Run tests
+mise run test
+
+# Create a release
+mise run release
+```
+
+### GoReleaser
+
+OnTap uses [GoReleaser](https://goreleaser.com) to build and package releases. GoReleaser automates:
+
+- Cross-compilation for multiple platforms (Linux, macOS, Windows)
+- Creating distribution packages (deb, rpm, apk, etc.)
+- Publishing to package managers (Homebrew, etc.)
+- Generating changelogs
+
+The `.goreleaser.yaml` file defines the release configuration.
+
+#### Generated Artifacts
+
+GoReleaser generates the following artifacts:
+
+- Binary executables for multiple platforms
+- Debian packages (.deb)
+- RPM packages (.rpm)
+- Alpine Linux packages (.apk)
+- Arch Linux packages (.pkg.tar.zst)
+- Homebrew formula
+- Checksums and signatures
+
+#### Creating a Release
+
+To create a new release:
+
+1. Tag the commit:
+
+   ```bash
+   git tag -a v1.0.0 -m "Release v1.0.0"
+   git push origin v1.0.0
+   ```
+
+2. Run GoReleaser:
+
+   ```bash
+   mise run release
+   ```
+
+For testing releases without publishing:
+
+```bash
+mise run release-snapshot
+```
+
 ## How OnTap Works (Under the Hood)
 
-OnTap dynamically generates CLI commands from OpenAPI specifications at runtime. The following diagrams illustrate how the tool processes API specifications and transforms them into usable CLI commands.
+OnTap dynamically generates CLI commands from OpenAPI specificationss at runtime. The following diagrams illustrate how the tool processes API specifications and transforms them into usable CLI commands.
 
 ### High-Level Architecture
 

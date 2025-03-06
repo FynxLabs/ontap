@@ -1,9 +1,0 @@
-apis:
-  example-api:
-    apispec: ./test/fixtures/openapi.yaml
-    auth: user:pass
-    url: http://api.example.com
-    cache_ttl: 24h0m0s
-    output: json
-    headers:
-      User-Agent: OnTap CLI

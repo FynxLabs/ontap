@@ -1,9 +1,19 @@
 apis:
+  # Example using URL-based OpenAPI spec
   demo-noauth:
     apispec: http://localhost:8080/openapi.json
     url: http://localhost:8080
+    cache_ttl: 1h0m0s # Cache for 1 hour
 
+  # Example using local file-based OpenAPI spec
+  demo-noauth-file:
+    apispec: ./openapi.json
+    url: http://localhost:8080
+    cache_ttl: 24h0m0s # Cache for 24 hours
+
+  # Example with basic authentication
   demo-basic:
     apispec: http://localhost:8081/openapi.json
     url: http://localhost:8081
     auth: user:pass
+    cache_ttl: 1h0m0s # Cache for 1 hour

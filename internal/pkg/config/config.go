@@ -16,7 +16,7 @@ const (
 	DefaultConfigFileName = "config.yaml"
 
 	// DefaultConfigDir is the default directory for the config file
-	DefaultConfigDir = ".otap"
+	DefaultConfigDir = ".ontap"
 )
 
 // ConfigLoader is the interface for loading and saving configurations
@@ -126,35 +126,6 @@ func (l *ViperConfigLoader) GetDefaultConfigPath() string {
 		return DefaultConfigFileName
 	}
 
-	return filepath.Join(homeDir, DefaultConfigDir, DefaultConfigFileName)
-}
-
-// CreateDefaultConfig creates a default configuration file
-func CreateDefaultConfig(path string) error {
-	if path == "" {
-		loader := NewConfigLoader()
-		path = loader.GetDefaultConfigPath()
-	}
-
-	// Create a default config
-	config := &Config{
-		APIs: map[string]APIConfig{
-			"example-api": {
-				APISpec: "./test/fixtures/openapi.yaml",
-				Auth:    "user:pass",
-				URL:     "http://api.example.com",
-				CacheTTL: Duration{
-					Duration: 24 * 60 * 60 * 1000 * 1000 * 1000, // 24h in nanoseconds
-				},
-				DefaultOutput: "json",
-				Headers: map[string]string{
-					"User-Agent": "OnTap CLI",
-				},
-			},
-		},
-	}
-
-	// Save the config
-	loader := NewConfigLoader()
-	return loader.SaveConfig(config, path)
+	configDir := filepath.Join(homeDir, "config")
+	return filepath.Join(configDir, DefaultConfigDir, DefaultConfigFileName)
 }

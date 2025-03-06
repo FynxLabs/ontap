@@ -2,242 +2,48 @@ package main
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/go-fuego/fuego"
+	"github.com/go-fuego/fuego/option"
+	"github.com/go-fuego/fuego/param"
 )
 
-// OpenAPI specification
-const openAPISpec = `
-{
-  "openapi": "3.0.0",
-  "info": {
-    "title": "OnTap Demo API",
-    "description": "A simple API for demonstrating OnTap CLI features",
-    "version": "1.0.0"
-  },
-  "paths": {
-    "/items": {
-      "get": {
-        "summary": "List all items",
-        "description": "Returns a list of all items",
-        "operationId": "list-items",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Maximum number of items to return",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "description": "Number of items to skip",
-            "schema": {
-              "type": "integer",
-              "default": 0
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A list of items",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Item"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "summary": "Create a new item",
-        "description": "Creates a new item with the provided data",
-        "operationId": "create-item",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ItemInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Item created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input"
-          }
-        }
-      }
-    },
-    "/items/{id}": {
-      "get": {
-        "summary": "Get an item by ID",
-        "description": "Returns a single item by its ID",
-        "operationId": "get-item",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "An item",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Item not found"
-          }
-        }
-      },
-      "put": {
-        "summary": "Update an item",
-        "description": "Updates an existing item with the provided data",
-        "operationId": "update-item",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ItemInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Item updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input"
-          },
-          "404": {
-            "description": "Item not found"
-          }
-        }
-      },
-      "delete": {
-        "summary": "Delete an item",
-        "description": "Deletes an item by its ID",
-        "operationId": "delete-item",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Item deleted"
-          },
-          "404": {
-            "description": "Item not found"
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "Item": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": ["id", "name"]
-      },
-      "ItemInput": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": ["name"]
-      }
-    }
-  }
-}
-`
+// Global store variable for simplicity
+var store *InMemoryStore
 
 func main() {
 	// Create a new store
-	store := NewInMemoryStore()
+	store = NewInMemoryStore()
+	log.Println("Initialized in-memory store with sample data")
 
-	// Create a new router
-	mux := http.NewServeMux()
+	// Get the port from environment variable or use default
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	// Create a new Fuego server with proper OpenAPI configuration
+	log.Println("Creating Fuego server with OpenAPI configuration...")
+	s := fuego.NewServer(
+		fuego.WithAddr(":"+port), // Explicitly set the port
+		fuego.WithEngineOptions(
+			fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{
+				SwaggerURL:       "/swagger",
+				SpecURL:          "/openapi.json",
+				JSONFilePath:     "openapi.json",
+				DisableSwaggerUI: false,
+				DisableLocalSave: false,
+			}),
+		),
+	)
 
 	// Setup auth middleware based on environment variable
-	var handler http.Handler = mux
 	authMode := os.Getenv("AUTH_MODE")
 	if authMode == "basic" {
 		username := os.Getenv("BASIC_USER")
@@ -245,202 +51,110 @@ func main() {
 		if username == "" || password == "" {
 			log.Fatal("BASIC_USER and BASIC_PASS must be set when AUTH_MODE=basic")
 		}
-		handler = basicAuthMiddleware(username, password)(mux)
+
+		log.Printf("Setting up basic auth middleware with username: %s", username)
+		// Add basic auth middleware to all routes except OpenAPI
+		fuego.Use(s, func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Skip auth for OpenAPI spec
+				if r.URL.Path == "/openapi.json" || r.URL.Path == "/swagger" || strings.HasPrefix(r.URL.Path, "/swagger/") {
+					log.Printf("Skipping auth for OpenAPI endpoint: %s", r.URL.Path)
+					next.ServeHTTP(w, r)
+					return
+				}
+
+				// Get the Authorization header
+				auth := r.Header.Get("Authorization")
+				if auth == "" {
+					w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+					w.WriteHeader(http.StatusUnauthorized)
+					w.Write([]byte("Unauthorized"))
+					return
+				}
+
+				// Check if the credentials are valid
+				if !isValidBasicAuth(auth, username, password) {
+					w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+					w.WriteHeader(http.StatusUnauthorized)
+					w.Write([]byte("Unauthorized"))
+					return
+				}
+
+				// Call the next handler
+				next.ServeHTTP(w, r)
+			})
+		})
+	} else {
+		log.Println("No authentication required (AUTH_MODE not set to 'basic')")
 	}
 
-	// Serve OpenAPI spec
-	mux.HandleFunc("/openapi.json", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(openAPISpec))
-	})
+	// Add a health check endpoint
+	fuego.Get(s, "/health", healthCheck,
+		option.Summary("Health check endpoint"),
+		option.Description("Returns a simple message to indicate that the server is running"),
+	)
+
+	// Define API routes
+	log.Println("Defining API routes...")
+	itemsGroup := fuego.Group(s, "/items",
+		option.Tags("items"),
+	)
 
 	// List items
-	mux.HandleFunc("GET /items", func(w http.ResponseWriter, r *http.Request) {
-		// Parse query parameters
-		limitStr := r.URL.Query().Get("limit")
-		offsetStr := r.URL.Query().Get("offset")
-
-		limit := 10
-		if limitStr != "" {
-			if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-				limit = l
-			}
-		}
-
-		offset := 0
-		if offsetStr != "" {
-			if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
-				offset = o
-			}
-		}
-
-		// Get items from store
-		items := store.GetItems(limit, offset)
-
-		// Return JSON response
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(items)
-	})
+	fuego.Get(itemsGroup, "", listItems,
+		option.Summary("List all items"),
+		option.Description("Returns a list of all items"),
+		option.OperationID("list-items"),
+		option.QueryInt("limit", "Maximum number of items to return", param.Default(10)),
+		option.QueryInt("offset", "Number of items to skip", param.Default(0)),
+	)
 
 	// Get item by ID
-	mux.HandleFunc("GET /items/{id}", func(w http.ResponseWriter, r *http.Request) {
-		// Parse ID from path
-		idStr := r.PathValue("id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			http.Error(w, "Invalid ID format", http.StatusBadRequest)
-			return
-		}
-
-		// Get item from store
-		item, exists := store.GetItem(id)
-		if !exists {
-			http.Error(w, "Item not found", http.StatusNotFound)
-			return
-		}
-
-		// Return JSON response
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(item)
-	})
+	fuego.Get(itemsGroup, "/{id}", getItem,
+		option.Summary("Get an item by ID"),
+		option.Description("Returns a single item by its ID"),
+		option.OperationID("get-item"),
+	)
 
 	// Create item
-	mux.HandleFunc("POST /items", func(w http.ResponseWriter, r *http.Request) {
-		// Parse request body
-		var input ItemInput
-		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
-			return
-		}
-
-		// Validate input
-		if input.Name == "" {
-			http.Error(w, "Name is required", http.StatusBadRequest)
-			return
-		}
-
-		// Create item
-		item := Item{
-			Name:        input.Name,
-			Description: input.Description,
-		}
-
-		// Add to store
-		item = store.AddItem(item)
-
-		// Return JSON response
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(item)
-	})
+	fuego.Post(itemsGroup, "", createItem,
+		option.Summary("Create a new item"),
+		option.Description("Creates a new item with the provided data"),
+		option.OperationID("create-item"),
+	)
 
 	// Update item
-	mux.HandleFunc("PUT /items/{id}", func(w http.ResponseWriter, r *http.Request) {
-		// Parse ID from path
-		idStr := r.PathValue("id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			http.Error(w, "Invalid ID format", http.StatusBadRequest)
-			return
-		}
-
-		// Parse request body
-		var input ItemInput
-		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
-			return
-		}
-
-		// Validate input
-		if input.Name == "" {
-			http.Error(w, "Name is required", http.StatusBadRequest)
-			return
-		}
-
-		// Create item
-		item := Item{
-			Name:        input.Name,
-			Description: input.Description,
-		}
-
-		// Update in store
-		updatedItem, exists := store.UpdateItem(id, item)
-		if !exists {
-			http.Error(w, "Item not found", http.StatusNotFound)
-			return
-		}
-
-		// Return JSON response
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(updatedItem)
-	})
+	fuego.Put(itemsGroup, "/{id}", updateItem,
+		option.Summary("Update an item"),
+		option.Description("Updates an existing item with the provided data"),
+		option.OperationID("update-item"),
+	)
 
 	// Delete item
-	mux.HandleFunc("DELETE /items/{id}", func(w http.ResponseWriter, r *http.Request) {
-		// Parse ID from path
-		idStr := r.PathValue("id")
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			http.Error(w, "Invalid ID format", http.StatusBadRequest)
-			return
-		}
-
-		// Delete from store
-		success := store.DeleteItem(id)
-		if !success {
-			http.Error(w, "Item not found", http.StatusNotFound)
-			return
-		}
-
-		// Return no content
-		w.WriteHeader(http.StatusNoContent)
-	})
+	fuego.Delete(itemsGroup, "/{id}", deleteItem,
+		option.Summary("Delete an item"),
+		option.Description("Deletes an item by its ID"),
+		option.OperationID("delete-item"),
+	)
 
 	// Start the server
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	log.Printf("Starting server on port %s...", port)
+	log.Printf("Server URL: http://localhost:%s", port)
+	log.Printf("OpenAPI spec URL: http://localhost:%s/openapi.json", port)
+	log.Printf("Swagger UI URL: http://localhost:%s/swagger", port)
+	log.Printf("Health check URL: http://localhost:%s/health", port)
 
-	log.Printf("Starting server on :%s", port)
-	log.Printf("OpenAPI spec available at http://localhost:%s/openapi.json", port)
-	log.Fatal(http.ListenAndServe(":"+port, handler))
+	// Run the server
+	s.Run()
 }
 
-// basicAuthMiddleware creates a middleware for basic authentication
-func basicAuthMiddleware(username, password string) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Skip auth for OpenAPI spec
-			if r.URL.Path == "/openapi.json" {
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			// Get the Authorization header
-			auth := r.Header.Get("Authorization")
-			if auth == "" {
-				w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("Unauthorized"))
-				return
-			}
-
-			// Check if the credentials are valid
-			if !isValidBasicAuth(auth, username, password) {
-				w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("Unauthorized"))
-				return
-			}
-
-			// Call the next handler
-			next.ServeHTTP(w, r)
-		})
-	}
+// Health check handler
+func healthCheck(c fuego.ContextNoBody) (string, error) {
+	log.Println("Handling request: GET /health")
+	return "Server is up and running", nil
 }
 
-// isValidBasicAuth checks if the provided basic auth credentials are valid
+// Helper function for basic auth
 func isValidBasicAuth(auth, username, password string) bool {
 	// Check if it's a Basic auth header
 	if !strings.HasPrefix(auth, "Basic ") {
@@ -461,4 +175,128 @@ func isValidBasicAuth(auth, username, password string) bool {
 
 	// Check if the credentials match
 	return parts[0] == username && parts[1] == password
+}
+
+// Handler implementations
+func listItems(c fuego.ContextNoBody) ([]Item, error) {
+	log.Println("Handling request: GET /items")
+	// Get items from store with default values
+	items := store.GetItems(10, 0)
+	log.Printf("Returning %d items", len(items))
+	return items, nil
+}
+
+func getItem(c fuego.ContextNoBody) (Item, error) {
+	// Get ID from path parameter
+	idStr := c.Request().PathValue("id")
+	log.Printf("Handling request: GET /items/%s", idStr)
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Printf("Error: Invalid ID format: %s", idStr)
+		return Item{}, &fuego.HTTPError{
+			Status: http.StatusBadRequest,
+			Title:  "Invalid ID format",
+		}
+	}
+
+	// Get item from store
+	item, exists := store.GetItem(id)
+	if !exists {
+		log.Printf("Error: Item not found with ID: %d", id)
+		return Item{}, &fuego.HTTPError{
+			Status: http.StatusNotFound,
+			Title:  "Item not found",
+		}
+	}
+
+	log.Printf("Returning item with ID: %d", id)
+	return item, nil
+}
+
+func createItem(c fuego.ContextNoBody) (Item, error) {
+	log.Println("Handling request: POST /items")
+
+	// Create a new item with default values
+	item := Item{
+		Name:        "New Item",
+		Description: "A new item created via API",
+		CreatedAt:   time.Now(),
+	}
+
+	// Add to store
+	item = store.AddItem(item)
+	log.Printf("Created new item with ID: %d", item.ID)
+
+	return item, nil
+}
+
+func updateItem(c fuego.ContextNoBody) (Item, error) {
+	// Get ID from path parameter
+	idStr := c.Request().PathValue("id")
+	log.Printf("Handling request: PUT /items/%s", idStr)
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Printf("Error: Invalid ID format: %s", idStr)
+		return Item{}, &fuego.HTTPError{
+			Status: http.StatusBadRequest,
+			Title:  "Invalid ID format",
+		}
+	}
+
+	// Get item from store
+	item, exists := store.GetItem(id)
+	if !exists {
+		log.Printf("Error: Item not found with ID: %d", id)
+		return Item{}, &fuego.HTTPError{
+			Status: http.StatusNotFound,
+			Title:  "Item not found",
+		}
+	}
+
+	// Update the item with default values
+	item.Name = "Updated Item"
+	item.Description = "An updated item via API"
+
+	// Update in store
+	updatedItem, exists := store.UpdateItem(id, item)
+	if !exists {
+		log.Printf("Error: Failed to update item with ID: %d", id)
+		return Item{}, &fuego.HTTPError{
+			Status: http.StatusNotFound,
+			Title:  "Item not found",
+		}
+	}
+
+	log.Printf("Updated item with ID: %d", id)
+	return updatedItem, nil
+}
+
+func deleteItem(c fuego.ContextNoBody) (interface{}, error) {
+	// Get ID from path parameter
+	idStr := c.Request().PathValue("id")
+	log.Printf("Handling request: DELETE /items/%s", idStr)
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Printf("Error: Invalid ID format: %s", idStr)
+		return nil, &fuego.HTTPError{
+			Status: http.StatusBadRequest,
+			Title:  "Invalid ID format",
+		}
+	}
+
+	// Delete from store
+	success := store.DeleteItem(id)
+	if !success {
+		log.Printf("Error: Item not found with ID: %d", id)
+		return nil, &fuego.HTTPError{
+			Status: http.StatusNotFound,
+			Title:  "Item not found",
+		}
+	}
+
+	log.Printf("Deleted item with ID: %d", id)
+	return nil, nil
 }

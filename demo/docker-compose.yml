@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   # Basic API with no auth
   api-noauth:
