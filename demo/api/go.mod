@@ -2,7 +2,7 @@ module github.com/fynxlabs/ontap/examples/demo/api
 
 go 1.24.0
 
-require github.com/go-fuego/fuego v0.18.0
+require github.com/go-fuego/fuego v0.18.5
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
