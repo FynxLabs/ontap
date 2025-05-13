@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/huh v0.7.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/log v0.4.0
-	github.com/pb33f/libopenapi v0.21.8
+	github.com/pb33f/libopenapi v0.21.11
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.19.0
