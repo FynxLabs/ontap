@@ -201,11 +201,19 @@ func (s *FileSystemCacheStore) GetCachePath(key string) string {
 
 // DefaultCacheDir returns the default cache directory
 func DefaultCacheDir() string {
-	homeDir, err := os.UserHomeDir()
+	// Try to get the user config directory (platform-specific)
+	configDir, err := os.UserConfigDir()
 	if err != nil {
-		log.Warn("Failed to get user home directory", "error", err)
-		return "config/.ontap/cache"
+		// Fall back to user home directory if UserConfigDir fails
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			log.Warn("Failed to get user home directory", "error", err)
+			return ".ontap/cache"
+		}
+		// Use ~/.ontap/cache as fallback
+		return filepath.Join(homeDir, ".ontap", "cache")
 	}
 
-	return filepath.Join(homeDir, "config", ".ontap", "cache")
+	// Use platform-specific user config directory
+	return filepath.Join(configDir, "ontap", "cache")
 }

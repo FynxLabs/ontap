@@ -126,7 +126,12 @@ sudo mv ontap /usr/local/bin/
 
 ## Configuration
 
-OnTap uses a YAML configuration file to manage API specs. The default location is `$HOME/.ontap/config.yaml`, but you can specify a different location with the `--config` flag.
+OnTap uses a YAML configuration file to manage API specs. The default location is platform-specific:
+- macOS: `~/Library/Application Support/ontap/config.yaml`
+- Linux: `~/.config/ontap/config.yaml` (XDG style)
+- Windows: `%APPDATA%\ontap\config.yaml`
+
+You can specify a different location with the `--config` flag.
 
 Example configuration:
 

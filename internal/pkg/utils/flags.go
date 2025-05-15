@@ -15,7 +15,7 @@ import (
 // AddGlobalFlags adds global flags to a command
 func AddGlobalFlags(cmd *cobra.Command) {
 	// Add global flags
-	cmd.PersistentFlags().StringP("config", "c", "", "Config file (default is $HOME/config/.ontap/config.yaml)")
+	cmd.PersistentFlags().StringP("config", "c", "", "Config file (default is platform-specific user config directory)")
 	cmd.PersistentFlags().StringP("output", "o", "json", "Output format (json, yaml, csv, text, table)")
 	cmd.PersistentFlags().StringP("log-level", "l", "info", "Log level (debug, info, warn, error)")
 	cmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")
