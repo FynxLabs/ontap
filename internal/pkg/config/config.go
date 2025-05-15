@@ -120,12 +120,19 @@ func (l *ViperConfigLoader) GetAPIConfig(name string) (*APIConfig, error) {
 
 // GetDefaultConfigPath returns the default path for the config file
 func (l *ViperConfigLoader) GetDefaultConfigPath() string {
-	homeDir, err := os.UserHomeDir()
+	// Try to get the user config directory (platform-specific)
+	configDir, err := os.UserConfigDir()
 	if err != nil {
-		log.Warn("Failed to get user home directory", "error", err)
-		return DefaultConfigFileName
+		// Fall back to user home directory if UserConfigDir fails
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			log.Warn("Failed to get user home directory", "error", err)
+			return DefaultConfigFileName
+		}
+		// Use ~/.ontap as fallback (as documented in README)
+		return filepath.Join(homeDir, DefaultConfigDir, DefaultConfigFileName)
 	}
 
-	configDir := filepath.Join(homeDir, "config")
-	return filepath.Join(configDir, DefaultConfigDir, DefaultConfigFileName)
+	// Use platform-specific user config directory
+	return filepath.Join(configDir, "ontap", DefaultConfigFileName)
 }

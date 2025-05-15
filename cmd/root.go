@@ -75,7 +75,7 @@ func Execute() {
 
 func init() {
 	// Add global flags
-	rootCmd.PersistentFlags().StringVarP(&configFlag, "config", "c", "", "Config file (default is $HOME/config/.ontap/config.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&configFlag, "config", "c", "", "Config file (default is platform-specific user config directory)")
 	rootCmd.PersistentFlags().StringP("output", "o", "json", "Output format (json, yaml, csv, text, table)")
 	rootCmd.PersistentFlags().StringP("log-level", "l", "info", "Log level (debug, info, warn, error)")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")

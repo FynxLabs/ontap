@@ -16,11 +16,14 @@ var (
 		Use:   "init",
 		Short: "Initialize a new configuration",
 		Long: `Initialize a new configuration file with default settings.
-This will create a config.yaml file in the $HOME/config/.ontap directory.
+This will create a config.yaml file in the platform-specific user configuration directory:
+		- macOS: ~/Library/Application Support/ontap/config.yaml
+		- Linux: ~/.config/ontap/config.yaml (XDG style)
+		- Windows: %APPDATA%\ontap\config.yaml
 
 Examples:
-  # Initialize a new configuration
-  ontap init`,
+		# Initialize a new configuration
+		ontap init`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Get the config path
 			configPath, err := getConfigPath()
