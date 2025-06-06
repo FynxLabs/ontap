@@ -107,6 +107,8 @@ github.com/pb33f/libopenapi v0.22.0 h1:xUXvKnenzLsZbocqKItbkgCTK6jYR1/R8MoDMBDPt
 github.com/pb33f/libopenapi v0.22.0/go.mod h1:utT5sD2/mnN7YK68FfZT5yEPbI1wwRBpSS4Hi0oOrBU=
 github.com/pb33f/libopenapi v0.22.1 h1:OvvAgAFCMRDuRtVzzrCX4jQBpgZ0zH26TkbHf81Wvfs=
 github.com/pb33f/libopenapi v0.22.1/go.mod h1:utT5sD2/mnN7YK68FfZT5yEPbI1wwRBpSS4Hi0oOrBU=
+github.com/pb33f/libopenapi v0.22.3 h1:kMHyMUlK5Z4IT2bPnQmaYJabnGP4PbfOU62C097QiYY=
+github.com/pb33f/libopenapi v0.22.3/go.mod h1:utT5sD2/mnN7YK68FfZT5yEPbI1wwRBpSS4Hi0oOrBU=
 github.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNHvL12M=
 github.com/pelletier/go-toml/v2 v2.2.3/go.mod h1:MfCQTFTvCcUyyvvwm1+G6H/jORL20Xlb6rzQu9GuUkc=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
