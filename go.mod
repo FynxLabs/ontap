@@ -6,7 +6,7 @@ require (
 	github.com/charmbracelet/bubbles/v2 v2.0.0-beta.1
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/huh v0.8.0
-	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/charmbracelet/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/log v0.4.2
 	github.com/pb33f/libopenapi v0.22.3
 	github.com/spf13/cobra v1.10.1
